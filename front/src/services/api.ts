@@ -12,7 +12,7 @@ import {
   PlayerStats
 } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://project-ascend.onrender.com';
 
 // Create axios instance with default config
 const api = axios.create({
