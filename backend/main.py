@@ -387,7 +387,7 @@ app = FastAPI(title="Project Ascend API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173","https://project-ascend.vercel.app","https://project-ascend-8r0fpvmn2-prithvi-rs-projects.vercel.app", "http://localhost:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
