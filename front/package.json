@@ -9,7 +9,8 @@
     "build:client": "rsbuild build -c rsbuild.config.ts",
     "type-check": "tsc -b --pretty",
     "lint": "tsc -b --pretty",
-    "preview": "rsbuild preview"
+    "preview": "rsbuild preview",
+    "vercel-build": "npm install --legacy-peer-deps && vercel build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
