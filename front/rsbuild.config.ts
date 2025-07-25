@@ -16,7 +16,7 @@ export default defineConfig({
   },
   output: {
     distPath: {
-      root: "dist/web",
+      root: "build",
     },
     legalComments: "none",
   },
