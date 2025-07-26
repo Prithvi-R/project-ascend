@@ -15,7 +15,6 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-# from quest_ai_router import router as quest_ai_router
 
 # ===== CONFIGURATION =====
 SECRET_KEY = os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
@@ -265,6 +264,21 @@ class ExerciseResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class ExerciseCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    instructions: Optional[str] = None
+    common_mistakes: Optional[str] = None
+    video_url: Optional[str] = None
+    tags: Optional[Dict[str, Any]] = {} # tags can be an empty dict
+
+class ExerciseUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    instructions: Optional[str] = None
+    common_mistakes: Optional[str] = None
+    video_url: Optional[str] = None
+    tags: Optional[Dict[str, Any]] = None # tags can be None for partial update
 class WorkoutCreate(BaseModel):
     name: str
     date_logged: datetime
@@ -325,6 +339,31 @@ class FoodDatabaseResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class FoodDatabaseCreate(BaseModel):
+    name: str
+    brand: Optional[str] = None
+    serving_size: str
+    calories: float
+    protein: float
+    carbs: float
+    fat: float
+    fiber: Optional[float] = None
+    sugar: Optional[float] = None
+    sodium: Optional[float] = None
+    category: Optional[str] = None
+
+class FoodDatabaseUpdate(BaseModel):
+    name: Optional[str] = None
+    brand: Optional[str] = None
+    serving_size: Optional[str] = None
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbs: Optional[float] = None
+    fat: Optional[float] = None
+    fiber: Optional[float] = None
+    sugar: Optional[float] = None
+    sodium: Optional[float] = None
+    category: Optional[str] = None
 class MealTemplateCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -651,6 +690,67 @@ def get_exercise(exercise_id: int, db: Session = Depends(get_db)):
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
     return exercise
+
+@app.post("/exercises/", response_model=ExerciseResponse, status_code=status.HTTP_201_CREATED)
+def create_exercise(
+    exercise_data: ExerciseCreate,
+    current_user: User = Depends(get_current_user), # Requires authentication
+    db: Session = Depends(get_db)
+):
+    """Create a new exercise."""
+    db_exercise = Exercise(
+        name=exercise_data.name,
+        description=exercise_data.description,
+        instructions=exercise_data.instructions,
+        common_mistakes=exercise_data.common_mistakes,
+        video_url=exercise_data.video_url,
+        tags=exercise_data.tags,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    
+    db.add(db_exercise)
+    db.commit()
+    db.refresh(db_exercise)
+    return db_exercise
+
+@app.put("/exercises/{exercise_id}", response_model=ExerciseResponse)
+def update_exercise(
+    exercise_id: int,
+    exercise_data: ExerciseUpdate,
+    current_user: User = Depends(get_current_user), # Requires authentication
+    db: Session = Depends(get_db)
+):
+    """Update an existing exercise."""
+    exercise = db.query(Exercise).filter(Exercise.id == exercise_id).first()
+    
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    
+    update_data = exercise_data.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(exercise, field, value)
+    
+    exercise.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(exercise)
+    return exercise
+
+@app.delete("/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_exercise(
+    exercise_id: int,
+    current_user: User = Depends(get_current_user), # Requires authentication
+    db: Session = Depends(get_db)
+):
+    """Delete an exercise."""
+    exercise = db.query(Exercise).filter(Exercise.id == exercise_id).first()
+    
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    
+    db.delete(exercise)
+    db.commit()
+    return {"message": "Exercise deleted successfully"}
 
 # ===== WORKOUT ENDPOINTS =====
 @app.get("/workouts", response_model=List[WorkoutResponse])
@@ -1143,6 +1243,73 @@ def get_popular_foods(db: Session = Depends(get_db)):
     """Get popular foods"""
     foods = db.query(FoodDatabase).limit(10).all()
     return {"data": foods}
+
+# NEW: Add, Modify, Delete Food Database Items
+@app.post("/api/food-database/", response_model=FoodDatabaseResponse, status_code=status.HTTP_201_CREATED)
+def create_food_database_item(
+    food_data: FoodDatabaseCreate,
+    current_user: User = Depends(get_current_user), # Requires authentication
+    db: Session = Depends(get_db)
+):
+    """Add a new food item to the food database."""
+    db_food = FoodDatabase(
+        name=food_data.name,
+        brand=food_data.brand,
+        serving_size=food_data.serving_size,
+        calories=food_data.calories,
+        protein=food_data.protein,
+        carbs=food_data.carbs,
+        fat=food_data.fat,
+        fiber=food_data.fiber,
+        sugar=food_data.sugar,
+        sodium=food_data.sodium,
+        category=food_data.category,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    
+    db.add(db_food)
+    db.commit()
+    db.refresh(db_food)
+    return db_food
+
+@app.put("/api/food-database/{food_id}", response_model=FoodDatabaseResponse)
+def update_food_database_item(
+    food_id: int,
+    food_data: FoodDatabaseUpdate,
+    current_user: User = Depends(get_current_user), # Requires authentication
+    db: Session = Depends(get_db)
+):
+    """Update an existing food item in the food database."""
+    food_item = db.query(FoodDatabase).filter(FoodDatabase.id == food_id).first()
+    
+    if not food_item:
+        raise HTTPException(status_code=404, detail="Food item not found in database")
+    
+    update_data = food_data.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(food_item, field, value)
+    
+    food_item.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(food_item)
+    return food_item
+
+@app.delete("/api/food-database/{food_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_food_database_item(
+    food_id: int,
+    current_user: User = Depends(get_current_user), # Requires authentication
+    db: Session = Depends(get_db)
+):
+    """Delete a food item from the food database."""
+    food_item = db.query(FoodDatabase).filter(FoodDatabase.id == food_id).first()
+    
+    if not food_item:
+        raise HTTPException(status_code=404, detail="Food item not found in database")
+    
+    db.delete(food_item)
+    db.commit()
+    return {"message": "Food item deleted successfully"}
 
 # ===== MEAL TEMPLATES ENDPOINTS =====
 @app.get("/api/meal-templates/", response_model=Dict[str, Any])
