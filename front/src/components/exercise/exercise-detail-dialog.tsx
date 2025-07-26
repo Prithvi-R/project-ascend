@@ -58,11 +58,11 @@ const disciplineIcons = {
   endurance: Clock,
 };
 
-export function ExerciseDetailDialog({ 
-  exercise, 
-  isOpen, 
-  onClose, 
-  onAddToWorkout 
+export function ExerciseDetailDialog({
+  exercise,
+  isOpen,
+  onClose,
+  onAddToWorkout
 }: ExerciseDetailDialogProps) {
   if (!exercise) return null;
 
@@ -83,27 +83,27 @@ export function ExerciseDetailDialog({
             {exercise.description}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Exercise Tags */}
           <div className="flex flex-wrap gap-2">
             {/* Difficulty */}
             {exercise.tags.difficulty && (
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={`${difficultyColors[exercise.tags.difficulty as keyof typeof difficultyColors] || 'bg-gray-100 text-gray-700'}`}
               >
                 {exercise.tags.difficulty.charAt(0).toUpperCase() + exercise.tags.difficulty.slice(1)}
               </Badge>
             )}
-            
+
             {/* Equipment */}
             {exercise.tags.equipment?.map(equipment => (
               <Badge key={equipment} variant="outline" className="bg-blue-100 text-blue-700">
                 {equipment.replace('_', ' ')}
               </Badge>
             ))}
-            
+
             {/* Disciplines */}
             {exercise.tags.discipline?.map(discipline => {
               const Icon = disciplineIcons[discipline as keyof typeof disciplineIcons] || BookOpen;
@@ -190,15 +190,37 @@ export function ExerciseDetailDialog({
                 <Play className="w-5 h-5 mr-2 text-purple-600" />
                 Video Demonstration
               </h3>
-              <div className="aspect-video bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <Play className="w-12 h-12 text-slate-400 mx-auto" />
-                  <p className="text-slate-600">Video demonstration available</p>
-                  <Button variant="outline" size="sm">
-                    <Play className="w-4 h-4 mr-2" />
-                    Watch Video
-                  </Button>
-                </div>
+
+              <div className="aspect-video bg-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+                {exercise.video_url.endsWith(".gif") || exercise.video_url.endsWith(".webp") ? (
+                  <img
+                    src={exercise.video_url}
+                    alt="Exercise demonstration"
+                    className="w-full h-full object-contain"
+                  />
+                ) : exercise.video_url.includes("youtube.com") || exercise.video_url.includes("youtu.be") ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${new URLSearchParams(new URL(exercise.video_url).search).get("v")}`}
+                    title="YouTube Video"
+                    className="w-full h-full object-contain"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="text-center space-y-2">
+                    <Play className="w-12 h-12 text-slate-400 mx-auto" />
+                    <p className="text-slate-600">Video demonstration available</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(exercise.video_url, "_blank")}
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Watch Video
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
